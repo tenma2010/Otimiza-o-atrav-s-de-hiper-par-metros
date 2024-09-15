@@ -1,3 +1,4 @@
+
 !pip install graphviz==0.9
 !pip install pydot
 !pip install seaborn==0.9.0
@@ -131,7 +132,7 @@ modelo = DecisionTreeClassifier(max_depth=10)
 results = cross_validate(modelo, x_azar, y_azar, cv = cv, groups = dados.modelo, return_train_score=False)
 imprime_resultados(results)
 
-"""# Testando parâmetros"""
+"""# Explorando hiper parâmetros em uma dimensão"""
 
 def roda_arvore_de_decisao(max_depth):
   SEED = 301
@@ -161,5 +162,91 @@ import matplotlib.pyplot as plt
 sns.lineplot(x = "max_depth", y = "train", data = resultados)
 sns.lineplot(x = "max_depth", y = "test", data = resultados)
 plt.legend(["Treino", "Teste"])
+
+resultados.sort_values("test", ascending=False).head()
+
+"""# Explorando hiper parâmetros em 2 dimensões"""
+
+def roda_arvore_de_decisao(max_depth, min_samples_leaf):
+  SEED = 301
+  np.random.seed(SEED)
+
+  cv = GroupKFold(n_splits = 10)
+  modelo = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf = min_samples_leaf)
+  results = cross_validate(modelo, x_azar, y_azar, cv = cv, groups = dados.modelo, return_train_score=True)
+  train_score = results['train_score'].mean() * 100
+  test_score = results['test_score'].mean() * 100
+  print("Arvore max_depth = %d, min_samples_leaf = %d, treino = %.2f, teste = %.2f" % (max_depth, min_samples_leaf, train_score, test_score))
+  tabela = [max_depth, min_samples_leaf, train_score, test_score]
+  return tabela
+
+def busca():
+  resultados = []
+  for max_depth in range(1,33):
+    for min_samples_leaf in [32, 64, 128, 256]:
+      tabela = roda_arvore_de_decisao(max_depth, min_samples_leaf)
+      resultados.append(tabela)
+  resultados = pd.DataFrame(resultados, columns= ["max_depth","min_samples_leaf","train","test"])
+  return resultados
+
+resultados = busca()
+resultados.head()
+
+resultados.sort_values("test", ascending=False).head()
+
+corr = resultados.corr()
+corr
+
+sns.heatmap(corr)
+
+pd.scatter_matrix(resultados, figsize = (14, 8), alpha = 0.3)
+
+sns.pairplot(resultados)
+
+sns.set(style="white")
+
+# Generate a mask for the upper triangle
+mask = np.zeros_like(corr, dtype=np.bool)
+mask[np.triu_indices_from(mask)] = True
+
+# Set up the matplotlib figure
+f, ax = plt.subplots(figsize=(11, 9))
+
+# Generate a custom diverging colormap
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
+
+def busca():
+  resultados = []
+  for max_depth in range(1,33):
+    for min_samples_leaf in [128, 192, 256, 512]:
+      tabela = roda_arvore_de_decisao(max_depth, min_samples_leaf)
+      resultados.append(tabela)
+  resultados = pd.DataFrame(resultados, columns= ["max_depth","min_samples_leaf","train","test"])
+  return resultados
+
+resultados = busca()
+resultados.head()
+
+corr = resultados.corr()
+
+sns.set(style="white")
+
+# Generate a mask for the upper triangle
+mask = np.zeros_like(corr, dtype=np.bool)
+mask[np.triu_indices_from(mask)] = True
+
+# Set up the matplotlib figure
+f, ax = plt.subplots(figsize=(11, 9))
+
+# Generate a custom diverging colormap
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
 
 resultados.sort_values("test", ascending=False).head()
